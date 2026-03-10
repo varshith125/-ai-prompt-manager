@@ -139,8 +139,8 @@ const Dashboard = () => {
         return map[name.toLowerCase()] || 'bg-gray-500';
     };
 
-    // Gemini API Call
-    const generateContentWithGemini = async (userPrompt) => {
+    // Gemini API Call with retry on rate limit
+    const generateContentWithGemini = async (userPrompt, retryCount = 0) => {
         try {
             const res = await fetch(
                 `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
@@ -153,7 +153,19 @@ const Dashboard = () => {
                 }
             );
 
-            if (!res.ok) throw new Error(`Gemini error: ${res.status}`);
+            // Retry once on rate limit (429)
+            if (res.status === 429 && retryCount < 2) {
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                return generateContentWithGemini(userPrompt, retryCount + 1);
+            }
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                if (res.status === 429) {
+                    throw new Error('API quota exceeded. Please wait a few minutes and try again.');
+                }
+                throw new Error(errData?.error?.message || `Gemini error: ${res.status}`);
+            }
 
             const data = await res.json();
             return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
@@ -250,7 +262,7 @@ const Dashboard = () => {
             setPrompt('');
         } catch (error) {
             console.error('Error in handleSendPrompt:', error);
-            setResponse('Error generating response. Please try again.');
+            setResponse(error.message || 'Error generating response. Please try again.');
         } finally {
             setIsLoading(false);
         }
