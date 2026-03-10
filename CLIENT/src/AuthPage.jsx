@@ -15,9 +15,11 @@ import {
   FaCheckCircle,
 } from "react-icons/fa";
 import axios from "axios";
+import api from "./axiosInstance";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE = "http://127.0.0.1:8000/api/v7";
+// Uses the same base URL from axiosInstance (configurable via VITE_API_BASE env var)
+const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000/api/v7";
 const REGISTER_URL = `${API_BASE}/register/`;
 const LOGIN_URL = `${API_BASE}/login/`;
 

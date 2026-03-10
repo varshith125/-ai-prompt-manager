@@ -5,11 +5,17 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from datetime import datetime
-
-from blockchain import contract   # 🔗 blockchain connection
+import os
+import logging
 
 from .serializers import *
 from .logic import *
+
+logger = logging.getLogger(__name__)
+
+# Blockchain is optional - handled inside logic.py
+# Set BLOCKCHAIN_ENABLED=True in env to enable blockchain storage
+BLOCKCHAIN_ENABLED = os.getenv('BLOCKCHAIN_ENABLED', 'False') == 'True'
 
 
 class RegisterView(APIView):
@@ -58,7 +64,7 @@ class MeView(APIView):
         )
 
 
-# 🔗 BLOCKCHAIN INTEGRATION HERE
+# 🔗 BLOCKCHAIN + DATABASE INTEGRATION
 class ChatHistoryCreateView(APIView):
 
     permission_classes = [AllowAny]
@@ -72,39 +78,35 @@ class ChatHistoryCreateView(APIView):
             'timestamp': datetime.now().isoformat()
         })
 
-        # store in database
-        result = addData(chat_data)
-
-        # store in blockchain
+        # Always save to Django DB first
         try:
-
-            prompt_text = chat_data.get("prompt", "")
-
-            if prompt_text:
-
-                tx = contract.functions.addPrompt(prompt_text).transact()
-
-                print("Blockchain transaction:", tx)
-
+            serializer = ChatHistorySerializer(data={
+                'prompt': chat_data.get('prompt', ''),
+                'response': chat_data.get('response', ''),
+            })
+            serializer.is_valid(raise_exception=True)
+            user = request.user if request.user.is_authenticated else None
+            instance = serializer.save(user=user)
         except Exception as e:
-
-            print("Blockchain error:", str(e))
-
-        if result.get('success'):
-
-            all_data = retriveData()
-
+            logger.error(f"DB save error: {e}")
             return Response(
-                all_data[-1],
-                status=status.HTTP_201_CREATED
-            )
-
-        else:
-
-            return Response(
-                {'error': result.get('error', 'Failed to add data')},
+                {'error': f'Failed to save: {str(e)}'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        # Optionally store in blockchain (only when enabled + Ganache running)
+        if BLOCKCHAIN_ENABLED:
+            try:
+                result = addData(chat_data)
+                if result != "Success":
+                    logger.warning(f"Blockchain storage failed: {result}")
+            except Exception as e:
+                logger.warning(f"Blockchain error (non-fatal): {e}")
+
+        return Response(
+            ChatHistorySerializer(instance).data,
+            status=status.HTTP_201_CREATED
+        )
 
 
 class CategoryCreateView(APIView):
