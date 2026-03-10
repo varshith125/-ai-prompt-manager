@@ -8,7 +8,7 @@ import {
 } from 'react-icons/fa';
 import api from './axiosInstance';
 
-const GEMINI_API_KEY = "AIzaSyAhCfTprXIjEZV2JW_8OC1jAxNsZ5xLijQ";
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyAhCfTprXIjEZV2JW_8OC1jAxNsZ5xLijQ";
 
 const Dashboard = () => {
     const [activeTab, setActiveTab] = useState('chat');
@@ -83,7 +83,7 @@ const Dashboard = () => {
     // Fetch Category Items
     const fetchCategoryItems = async (categoryName) => {
         if (!categoryName) return;
-        
+
         setLoadingCategoryItems(true);
         try {
             const { data } = await api.get(`/category/user/${categoryName.toLowerCase()}/`);
@@ -143,7 +143,7 @@ const Dashboard = () => {
     const generateContentWithGemini = async (userPrompt) => {
         try {
             const res = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -198,7 +198,7 @@ const Dashboard = () => {
         setResponse(historyItem.response);
         setActiveTab('chat');
         setSelectedHistoryItem(historyItem);
-        
+
         // Scroll to top of chat area
         setTimeout(() => {
             const chatArea = document.querySelector('.overflow-y-auto');
@@ -214,7 +214,7 @@ const Dashboard = () => {
         setResponse(categoryItem.response);
         setActiveTab('chat');
         setSelectedHistoryItem(categoryItem);
-        
+
         // Scroll to top of chat area
         setTimeout(() => {
             const chatArea = document.querySelector('.overflow-y-auto');
@@ -243,7 +243,7 @@ const Dashboard = () => {
 
             // Refresh data
             fetchChatHistory();
-            
+
             // Clear history item selection after sending new prompt
             setSelectedHistoryItem(null);
 
@@ -305,7 +305,7 @@ const Dashboard = () => {
             await api.post('/Add-category/', {
                 category_name: newCategory.trim()
             });
-            
+
             setNewCategory('');
             setShowAddCategory(false);
             fetchCategories();
@@ -320,7 +320,7 @@ const Dashboard = () => {
     // Handle adding response to category
     const handleAddToCategory = async () => {
         if (!selectedCategory || !prompt || !response) return;
-        
+
         try {
             await saveToCategory(prompt, response, selectedCategory.name);
             alert(`Added to ${selectedCategory.name} category!`);
@@ -472,7 +472,7 @@ const Dashboard = () => {
                                                         Loaded from {selectedHistoryItem.category ? 'category' : 'history'} • {new Date(selectedHistoryItem.timestamp).toLocaleString()}
                                                     </span>
                                                 </div>
-                                                <button 
+                                                <button
                                                     onClick={() => {
                                                         setSelectedHistoryItem(null);
                                                         clearChat();
@@ -485,7 +485,7 @@ const Dashboard = () => {
                                         </div>
                                     </div>
                                 )}
-                                
+
                                 {response ? (
                                     <div className="max-w-4xl mx-auto">
                                         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
@@ -569,9 +569,9 @@ const Dashboard = () => {
                                     <h2 className="text-2xl font-bold">Prompt History</h2>
                                     <div className="relative">
                                         <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
-                                        <input 
-                                            type="text" 
-                                            placeholder="Search history..." 
+                                        <input
+                                            type="text"
+                                            placeholder="Search history..."
                                             className="pl-10 pr-4 py-2 border rounded-lg w-64"
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -580,57 +580,57 @@ const Dashboard = () => {
                                 </div>
                                 <div className="space-y-4">
                                     {chatHistory
-                                        .filter(item => 
+                                        .filter(item =>
                                             item.prompt.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                             item.response.toLowerCase().includes(searchTerm.toLowerCase())
                                         )
                                         .map(item => (
-                                        <div 
-                                            key={item.id} 
-                                            className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer group"
-                                            onClick={() => loadHistoryToChat(item)}
-                                        >
-                                            <div className="flex justify-between items-start">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center space-x-2 mb-2">
-                                                        <span className="text-sm text-gray-500">
-                                                            {new Date(item.timestamp).toLocaleString()}
-                                                        </span>
-                                                        <span className="flex items-center space-x-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                                                            <FaReply className="h-3 w-3" />
-                                                            <span>Click to load in chat</span>
-                                                        </span>
+                                            <div
+                                                key={item.id}
+                                                className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer group"
+                                                onClick={() => loadHistoryToChat(item)}
+                                            >
+                                                <div className="flex justify-between items-start">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center space-x-2 mb-2">
+                                                            <span className="text-sm text-gray-500">
+                                                                {new Date(item.timestamp).toLocaleString()}
+                                                            </span>
+                                                            <span className="flex items-center space-x-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                                                                <FaReply className="h-3 w-3" />
+                                                                <span>Click to load in chat</span>
+                                                            </span>
+                                                        </div>
+                                                        <p className="font-medium text-gray-900 mb-2">{item.prompt}</p>
+                                                        <p className="text-sm text-gray-600 line-clamp-2">
+                                                            {item.response}
+                                                        </p>
                                                     </div>
-                                                    <p className="font-medium text-gray-900 mb-2">{item.prompt}</p>
-                                                    <p className="text-sm text-gray-600 line-clamp-2">
-                                                        {item.response}
-                                                    </p>
-                                                </div>
-                                                <div className="flex space-x-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button 
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            loadHistoryToChat(item);
-                                                        }}
-                                                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                                                        title="Load in chat"
-                                                    >
-                                                        <FaReply className="h-4 w-4" />
-                                                    </button>
-                                                    <button 
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            deleteHistoryItem(item.id);
-                                                        }} 
-                                                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                        title="Delete"
-                                                    >
-                                                        <FaTrash className="h-4 w-4" />
-                                                    </button>
+                                                    <div className="flex space-x-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                loadHistoryToChat(item);
+                                                            }}
+                                                            className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                                            title="Load in chat"
+                                                        >
+                                                            <FaReply className="h-4 w-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deleteHistoryItem(item.id);
+                                                            }}
+                                                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                            title="Delete"
+                                                        >
+                                                            <FaTrash className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
                                     {chatHistory.length === 0 && (
                                         <div className="text-center py-12">
                                             <FaHistory className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -652,7 +652,7 @@ const Dashboard = () => {
                                     </h2>
                                     <div className="flex space-x-3">
                                         {selectedCategory && (
-                                            <button 
+                                            <button
                                                 onClick={() => setSelectedCategory(null)}
                                                 className="flex items-center space-x-2 border border-gray-300 px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-50"
                                             >
@@ -674,12 +674,12 @@ const Dashboard = () => {
                                             <p className="text-gray-400 mb-6">Add categories to organize prompts</p>
                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
                                                 {defaultCategories.slice(0, 4).map(cat => (
-                                                    <button 
-                                                        key={cat.id} 
+                                                    <button
+                                                        key={cat.id}
                                                         onClick={() => {
                                                             setNewCategory(cat.name);
                                                             setShowAddCategory(true);
-                                                        }} 
+                                                        }}
                                                         className="p-4 border rounded-lg hover:shadow-md transition-shadow"
                                                     >
                                                         <div className={`w-12 h-12 ${cat.color} rounded-lg flex items-center justify-center mx-auto mb-2`}>
@@ -693,8 +693,8 @@ const Dashboard = () => {
                                     ) : (
                                         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
                                             {categories.map(cat => (
-                                                <div 
-                                                    key={cat.id} 
+                                                <div
+                                                    key={cat.id}
                                                     className="bg-white border rounded-lg p-6 text-center hover:shadow-md transition-shadow cursor-pointer"
                                                     onClick={() => setSelectedCategory(cat)}
                                                 >
@@ -734,8 +734,8 @@ const Dashboard = () => {
                                         ) : categoryItems.length > 0 ? (
                                             <div className="space-y-4">
                                                 {categoryItems.map(item => (
-                                                    <div 
-                                                        key={item.id} 
+                                                    <div
+                                                        key={item.id}
                                                         className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer group"
                                                         onClick={() => loadCategoryItemToChat(item)}
                                                     >
@@ -756,7 +756,7 @@ const Dashboard = () => {
                                                                 </p>
                                                             </div>
                                                             <div className="flex space-x-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <button 
+                                                                <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         loadCategoryItemToChat(item);
@@ -766,11 +766,11 @@ const Dashboard = () => {
                                                                 >
                                                                     <FaReply className="h-4 w-4" />
                                                                 </button>
-                                                                <button 
+                                                                <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         deleteCategoryItem(item.id);
-                                                                    }} 
+                                                                    }}
                                                                     className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                                                     title="Delete"
                                                                 >
