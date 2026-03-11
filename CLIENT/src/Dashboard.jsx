@@ -8,7 +8,7 @@ import {
 } from 'react-icons/fa';
 import api from './axiosInstance';
 
-const GEMINI_API_KEY = "AIzaSyBpsg3nBQonrJTSybuP-2V7yl3zQ662Tfk";
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_KEY;
 
 const Dashboard = () => {
     const [activeTab, setActiveTab] = useState('chat');
